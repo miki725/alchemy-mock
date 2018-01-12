@@ -2,19 +2,19 @@
 SQLAlchemy Mock
 ===============
 
-.. image:: https://badge.fury.io/py/alembic-mock.png
-    :target: http://badge.fury.io/py/alembic-mock
+.. image:: https://badge.fury.io/py/alchemy-mock.png
+    :target: http://badge.fury.io/py/alchemy-mock
 
-.. image:: https://travis-ci.org/miki725/alembic-mock.png?branch=master
-    :target: https://travis-ci.org/miki725/alembic-mock
+.. image:: https://travis-ci.org/miki725/alchemy-mock.png?branch=master
+    :target: https://travis-ci.org/miki725/alchemy-mock
 
-.. image:: https://coveralls.io/repos/miki725/alembic-mock/badge.png?branch=master
-    :target: https://coveralls.io/r/miki725/alembic-mock?branch=master
+.. image:: https://coveralls.io/repos/miki725/alchemy-mock/badge.png?branch=master
+    :target: https://coveralls.io/r/miki725/alchemy-mock?branch=master
 
 SQLAlchemy mock helpers.
 
 * Free software: MIT license
-* GitHub: https://github.com/miki725/alembic-mock
+* GitHub: https://github.com/miki725/alchemy-mock
 
 Installing
 ----------

@@ -15,7 +15,7 @@
         {
             "type": "packages",
             "packages": [
-                "alembic_mock"
+                "alchemy_mock"
             ]
         },
         {
