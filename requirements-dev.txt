@@ -1,0 +1,11 @@
+-r requirements.txt
+collective.checkdocs
+coverage
+flake8
+importanize
+mock
+pdbpp
+ptpython
+pytest
+pytest-cov
+tox

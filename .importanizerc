@@ -1,0 +1,25 @@
+{
+    "add_imports": [
+        "from __future__ import absolute_import, print_function, unicode_literals"
+    ],
+    "groups": [
+        {
+            "type": "stdlib"
+        },
+        {
+            "type": "sitepackages"
+        },
+        {
+            "type": "remainder"
+        },
+        {
+            "type": "packages",
+            "packages": [
+                "alembic_mock"
+            ]
+        },
+        {
+            "type": "local"
+        }
+    ]
+}

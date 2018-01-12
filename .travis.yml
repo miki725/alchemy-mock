@@ -1,0 +1,20 @@
+# Config file for automatic testing at travis-ci.org
+
+language: python
+
+python:
+  - "3.6"
+  - "2.7"
+  - "pypy"
+
+install:
+  - pip install -r requirements-dev.txt
+  - pip install coveralls
+
+script:
+  make check
+
+after_success:
+  coveralls
+
+sudo: false
