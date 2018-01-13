@@ -74,3 +74,32 @@ In those cases ``UnifiedAlchemyMagicMock`` can be used which combines various ca
     ...     mock.call(Model.foo == 5, Model.bar > 10),
     ...     mock.call(Model.foo == 5, Model.bar > 10, Model.note == 'hello world'),
     ... ])
+
+Also real-data can be stubbed by criteria::
+
+    >>> from alchemy_mock.mocking import UnifiedAlchemyMagicMock
+    >>> session = UnifiedAlchemyMagicMock(data=[
+    ...     (
+    ...         [mock.call.query(Model),
+    ...          mock.call.filter(Model.foo == 5, Model.bar > 10)],
+    ...         [Model(foo=5, bar=11)]
+    ...     ),
+    ...     (
+    ...         [mock.call.query(Model),
+    ...          mock.call.filter(Model.note == 'hello world')],
+    ...         [Model(note='hello world')]
+    ...     ),
+    ...     (
+    ...         [mock.call.query(AnotherModel),
+    ...          mock.call.filter(Model.foo == 5, Model.bar > 10)],
+    ...         [AnotherModel(foo=5, bar=17)]
+    ...     ),
+    ... ])
+    >>> session.query(Model).filter(Model.foo == 5).filter(Model.bar > 10).all()
+    [Model(foo=5, bar=11)]
+    >>> session.query(Model).filter(Model.note == 'hello world').all()
+    [Model(note='hello world')]
+    >>> session.query(AnotherModel).filter(Model.foo == 5).filter(Model.bar > 10).all()
+    [AnotherModel(foo=5, bar=17)]
+    >>> session.query(AnotherModel).filter(Model.note == 'hello world').all()
+    []
