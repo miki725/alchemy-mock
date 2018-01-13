@@ -147,6 +147,8 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         [3]
         >>> s.query(None).filter(c == 'four').all()
         []
+        >>> list(s.query('foo').filter(c == 'one').filter(c == 'two'))
+        [1, 2]
 
     Also note that only within same query functions are unified.
     After ``.all()`` is called or query is iterated over, future queries are not unified.
@@ -244,7 +246,7 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         if _mock_data is not None:
             previous_calls = [
                 sqlalchemy_call(i, with_name=True)
-                for i in self._get_previous_calls(self.method_calls[:-1])
+                for i in self._get_previous_calls(self.mock_calls[:-1])
             ]
 
             for calls, result in sorted(_mock_data, key=lambda x: len(x[0]), reverse=True):

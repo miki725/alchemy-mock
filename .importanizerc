@@ -2,12 +2,12 @@
     "add_imports": [
         "from __future__ import absolute_import, print_function, unicode_literals"
     ],
+    "exclude": [
+        "*/.tox/*"
+    ],
     "groups": [
         {
             "type": "stdlib"
-        },
-        {
-            "type": "sitepackages"
         },
         {
             "type": "remainder"
