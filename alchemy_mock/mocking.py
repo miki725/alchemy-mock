@@ -11,7 +11,47 @@ from .utils import copy_and_update, indexof, setattr_tmp
 Call = type(mock.call)
 
 
-def sqlalchemy_call(call, with_name=False):
+class UnorderedTuple(tuple):
+    """
+    Same as tuple except in comparison order does not matter
+
+    For example::
+
+        >>> UnorderedTuple((1, 2, 3)) == (3, 2, 1)
+        True
+    """
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+
+        other = list(other)
+        for i in self:
+            try:
+                other.remove(i)
+            except ValueError:
+                return False
+
+        return True
+
+
+class UnorderedCall(Call):
+    """
+    Same as Call except in comparison order of parameters does not matter
+
+    For example::
+
+        >>> UnorderedCall(((1, 2, 3), {'hello': 'world'})) == Call(((3, 2, 1), {'hello': 'world'}))
+        True
+    """
+    def __eq__(self, other):
+        _other = list(other)
+        _other[-2] = UnorderedTuple(other[-2])
+        other = Call(tuple(_other), **vars(other))
+
+        return super(UnorderedCall, self).__eq__(other)
+
+
+def sqlalchemy_call(call, with_name=False, base_call=Call):
     """
     Convert ``mock.call()`` into call with all parameters wrapped with ``ExpressionMatcher``
 
@@ -34,9 +74,9 @@ def sqlalchemy_call(call, with_name=False):
     kwargs = {k: ExpressionMatcher(v) for k, v in kwargs.items()}
 
     if with_name:
-        return getattr(mock.call, name)(*args, **kwargs)
+        return base_call((name, args, kwargs))
     else:
-        return Call((args, kwargs), two=True)
+        return base_call((args, kwargs), two=True)
 
 
 class AlchemyMagicMock(mock.MagicMock):
@@ -147,7 +187,7 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         [3]
         >>> s.query(None).filter(c == 'four').all()
         []
-        >>> list(s.query('foo').filter(c == 'one').filter(c == 'two'))
+        >>> list(s.query('foo').filter(c == 'two').filter(c == 'one'))
         [1, 2]
 
     Also note that only within same query functions are unified.
@@ -157,14 +197,14 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         'all': lambda x: x,
         '__iter__': lambda x: iter(x),
     }
-    unify = [
-        'query',
-        'add_columns',
-        'join',
-        'filter',
-        'filter_by',
-        'order_by',
-    ]
+    unify = {
+        'query': None,
+        'add_columns': None,
+        'join': None,
+        'filter': UnorderedCall,
+        'filter_by': UnorderedCall,
+        'order_by': None,
+    }
 
     def __init__(self, *args, **kwargs):
         kwargs['_mock_default'] = kwargs.pop('default', [])
@@ -245,11 +285,15 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
 
         if _mock_data is not None:
             previous_calls = [
-                sqlalchemy_call(i, with_name=True)
+                sqlalchemy_call(i, with_name=True, base_call=self.unify.get(i[0]) or Call)
                 for i in self._get_previous_calls(self.mock_calls[:-1])
             ]
 
             for calls, result in sorted(_mock_data, key=lambda x: len(x[0]), reverse=True):
+                calls = [
+                    sqlalchemy_call(i, with_name=True, base_call=self.unify.get(i[0]) or Call)
+                    for i in calls
+                ]
                 if all(c in previous_calls for c in calls):
                     return self.boundary[_mock_name](result)
 
