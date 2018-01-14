@@ -29,7 +29,7 @@ clean-all:  ## remove tox test artifacts
 
 lint:  ## check style with flake8 and importanize
 	flake8 alchemy_mock
-	python -m importanize alchemy_mock/
+	python -m importanize --ci alchemy_mock/
 
 test: clean  ## run all tests
 	pytest --doctest-modules --cov=alchemy_mock/ --cov-report=term-missing alchemy_mock/

@@ -64,13 +64,43 @@ In those cases ``UnifiedAlchemyMagicMock`` can be used which combines various ca
     >>> from alchemy_mock.mocking import UnifiedAlchemyMagicMock
     >>> session = UnifiedAlchemyMagicMock()
 
-    >>> q = session.query(Model).filter(Model.foo == 5)
+    >>> m = session.query(Model)
+    >>> q = m.filter(Model.foo == 5)
     >>> if condition:
-    ...     q = q.filter(Model.bar > 10)
+    ...     q = q.filter(Model.bar > 10).all()
     >>> data1 = q.all()
-    >>> data2 = q.filter(Model.note == 'hello world').all()
+    >>> data2 = m.filter(Model.note == 'hello world').all()
 
     >>> session.filter.assert_has_calls([
     ...     mock.call(Model.foo == 5, Model.bar > 10),
-    ...     mock.call(Model.foo == 5, Model.bar > 10, Model.note == 'hello world'),
+    ...     mock.call(Model.note == 'hello world'),
     ... ])
+
+Also real-data can be stubbed by criteria::
+
+    >>> from alchemy_mock.mocking import UnifiedAlchemyMagicMock
+    >>> session = UnifiedAlchemyMagicMock(data=[
+    ...     (
+    ...         [mock.call.query(Model),
+    ...          mock.call.filter(Model.foo == 5, Model.bar > 10)],
+    ...         [Model(foo=5, bar=11)]
+    ...     ),
+    ...     (
+    ...         [mock.call.query(Model),
+    ...          mock.call.filter(Model.note == 'hello world')],
+    ...         [Model(note='hello world')]
+    ...     ),
+    ...     (
+    ...         [mock.call.query(AnotherModel),
+    ...          mock.call.filter(Model.foo == 5, Model.bar > 10)],
+    ...         [AnotherModel(foo=5, bar=17)]
+    ...     ),
+    ... ])
+    >>> session.query(Model).filter(Model.foo == 5).filter(Model.bar > 10).all()
+    [Model(foo=5, bar=11)]
+    >>> session.query(Model).filter(Model.note == 'hello world').all()
+    [Model(note='hello world')]
+    >>> session.query(AnotherModel).filter(Model.foo == 5).filter(Model.bar > 10).all()
+    [AnotherModel(foo=5, bar=17)]
+    >>> session.query(AnotherModel).filter(Model.note == 'hello world').all()
+    []
