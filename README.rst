@@ -64,15 +64,16 @@ In those cases ``UnifiedAlchemyMagicMock`` can be used which combines various ca
     >>> from alchemy_mock.mocking import UnifiedAlchemyMagicMock
     >>> session = UnifiedAlchemyMagicMock()
 
-    >>> q = session.query(Model).filter(Model.foo == 5)
+    >>> m = session.query(Model)
+    >>> q = m.filter(Model.foo == 5)
     >>> if condition:
-    ...     q = q.filter(Model.bar > 10)
+    ...     q = q.filter(Model.bar > 10).all()
     >>> data1 = q.all()
-    >>> data2 = q.filter(Model.note == 'hello world').all()
+    >>> data2 = m.filter(Model.note == 'hello world').all()
 
     >>> session.filter.assert_has_calls([
     ...     mock.call(Model.foo == 5, Model.bar > 10),
-    ...     mock.call(Model.foo == 5, Model.bar > 10, Model.note == 'hello world'),
+    ...     mock.call(Model.note == 'hello world'),
     ... ])
 
 Also real-data can be stubbed by criteria::
