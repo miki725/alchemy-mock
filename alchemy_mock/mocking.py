@@ -3,9 +3,11 @@ from __future__ import absolute_import, print_function, unicode_literals
 from functools import partial
 from itertools import takewhile
 
+from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
+
 from .comparison import ExpressionMatcher
 from .compat import mock
-from .utils import copy_and_update, indexof, setattr_tmp
+from .utils import copy_and_update, indexof, raiser, setattr_tmp
 
 
 Call = type(mock.call)
@@ -175,6 +177,8 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         ...         [3]
         ...     ),
         ... ])
+
+        # .all()
         >>> s.query('foo').filter(c == 'one').filter(c == 'two').all()
         [1, 2]
         >>> s.query('bar').filter(c == 'one').filter(c == 'two').all()
@@ -187,8 +191,27 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         [3]
         >>> s.query(None).filter(c == 'four').all()
         []
+
+        # .iter()
         >>> list(s.query('foo').filter(c == 'two').filter(c == 'one'))
         [1, 2]
+
+        # .first()
+        >>> s.query('foo').filter(c == 'one').filter(c == 'two').first()
+        1
+        >>> s.query('bar').filter(c == 'one').filter(c == 'two').first()
+
+        # .one()
+        >>> s.query('foo').filter(c == 'three').one()
+        3
+        >>> s.query('bar').filter(c == 'one').filter(c == 'two').one()
+        Traceback (most recent call last):
+        ...
+        sqlalchemy.orm.exc.NoResultFound: No row was found for one()
+        >>> s.query('foo').filter(c == 'one').filter(c == 'two').one()
+        Traceback (most recent call last):
+        ...
+        sqlalchemy.orm.exc.MultipleResultsFound: Multiple rows were found for one()
 
     Also note that only within same query functions are unified.
     After ``.all()`` is called or query is iterated over, future queries are not unified.
@@ -196,6 +219,12 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
     boundary = {
         'all': lambda x: x,
         '__iter__': lambda x: iter(x),
+        'first': lambda x: next(iter(x), None),
+        'one': lambda x: (
+            x[0] if len(x) == 1 else
+            raiser(MultipleResultsFound, 'Multiple rows were found for one()') if x else
+            raiser(NoResultFound, 'No row was found for one()')
+        ),
     }
     unify = {
         'query': None,
@@ -211,18 +240,23 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         kwargs['_mock_data'] = kwargs.pop('data', None)
 
         kwargs.update({
-            k: AlchemyMagicMock(side_effect=partial(
-                self._get_data,
-                _mock_name=k,
-            ))
+            k: AlchemyMagicMock(
+                side_effect=partial(
+                    self._get_data,
+                    _mock_name=k,
+                ),
+            )
             for k in self.boundary
         })
 
         kwargs.update({
-            k: AlchemyMagicMock(side_effect=partial(
-                self._unify,
-                _mock_name=k,
-            ))
+            k: AlchemyMagicMock(
+                return_value=self,
+                side_effect=partial(
+                    self._unify,
+                    _mock_name=k,
+                ),
+            )
             for k in self.unify
         })
 
@@ -242,14 +276,13 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
 
     def _unify(self, *args, **kwargs):
         _mock_name = kwargs.pop('_mock_name')
+        submock = getattr(self, _mock_name)
 
         previous_method_call = self._get_previous_call(_mock_name, self.method_calls)
         previous_mock_call = self._get_previous_call(_mock_name, self.mock_calls)
 
-        if previous_method_call is None:
-            return self
-
-        submock = getattr(self, _mock_name)
+        if previous_mock_call is None:
+            return submock.return_value
 
         # remove immediate call from both filter mock as well as the parent mock object
         # as it was already registered in self.__call__ before this side-effect is called
@@ -276,7 +309,7 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         self.method_calls.append(Call((name, args, kwargs)))
         self.mock_calls.append(Call((name, args, kwargs)))
 
-        return self
+        return submock.return_value
 
     def _get_data(self, *args, **kwargs):
         _mock_name = kwargs.pop('_mock_name')
