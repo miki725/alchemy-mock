@@ -207,11 +207,11 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         >>> s.query('bar').filter(c == 'one').filter(c == 'two').one()
         Traceback (most recent call last):
         ...
-        sqlalchemy.orm.exc.NoResultFound: No row was found for one()
+        NoResultFound: No row was found for one()
         >>> s.query('foo').filter(c == 'one').filter(c == 'two').one()
         Traceback (most recent call last):
         ...
-        sqlalchemy.orm.exc.MultipleResultsFound: Multiple rows were found for one()
+        MultipleResultsFound: Multiple rows were found for one()
 
     Also note that only within same query functions are unified.
     After ``.all()`` is called or query is iterated over, future queries are not unified.
