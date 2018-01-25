@@ -98,3 +98,21 @@ def setattr_tmp(obj, name, value):
         yield
     finally:
         setattr(obj, name, original)
+
+
+def raiser(exp, *args, **kwargs):
+    """
+    Utility for raising exceptions
+
+    Useful in one-liners
+
+    For example::
+
+        >>> a = lambda x: not x and raiser(ValueError, 'error message')
+        >>> _ = a(True)
+        >>> _ = a(False)
+        Traceback (most recent call last):
+        ...
+        ValueError: error message
+    """
+    raise exp(*args, **kwargs)
