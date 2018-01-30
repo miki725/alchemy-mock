@@ -4,6 +4,7 @@ History
 -------
 
 0.3.0 (2018-01-24)
+~~~~~~~~~~~~~~~~~~
 
 * Added support for ``.one()`` and ``.first()`` methods when stubbing data.
 * Fixed bug which incorrectly unified methods after iterating on mock.
