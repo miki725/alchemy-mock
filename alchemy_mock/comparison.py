@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import collections
 
 import six
+from sqlalchemy import func
 from sqlalchemy.sql.expression import column, or_
 
 from .compat import mock
@@ -12,10 +13,12 @@ from .utils import match_type
 ALCHEMY_UNARY_EXPRESSION_TYPE = type(column('').asc())
 ALCHEMY_BINARY_EXPRESSION_TYPE = type(column('') == '')
 ALCHEMY_BOOLEAN_CLAUSE_LIST = type(or_(column('') == '', column('').is_(None)))
+ALCHEMY_FUNC_TYPE = type(func.dummy(column('')))
 ALCHEMY_TYPES = (
     ALCHEMY_UNARY_EXPRESSION_TYPE,
     ALCHEMY_BINARY_EXPRESSION_TYPE,
     ALCHEMY_BOOLEAN_CLAUSE_LIST,
+    ALCHEMY_FUNC_TYPE,
 )
 
 
@@ -68,6 +71,7 @@ class ExpressionMatcher(PrettyExpression):
         >>> e2 = c.in_(['foo', 'bar'])
         >>> e3 = c.in_(['cat', 'dog'])
         >>> e4 = c == 'foo'
+        >>> e5 = func.lower(c)
 
         >>> ExpressionMatcher(e1) == mock.ANY
         True
@@ -80,6 +84,10 @@ class ExpressionMatcher(PrettyExpression):
         >>> ExpressionMatcher(e1) == e3
         False
         >>> ExpressionMatcher(e1) == e4
+        False
+        >>> ExpressionMatcher(e5) == func.lower(c)
+        True
+        >>> ExpressionMatcher(e5) == func.upper(c)
         False
         >>> ExpressionMatcher(e1) == ExpressionMatcher(e2)
         True
