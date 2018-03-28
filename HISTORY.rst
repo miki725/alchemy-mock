@@ -3,6 +3,11 @@
 History
 -------
 
+0.3.1 (2018-03-28)
+~~~~~~~~~~~~~~~~~~
+
+* Added support for ``func`` calls in ``ExpressionMatcher``. For example ``func.lower(column)``.
+
 0.3.0 (2018-01-24)
 ~~~~~~~~~~~~~~~~~~
 

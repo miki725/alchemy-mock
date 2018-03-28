@@ -9,4 +9,5 @@ Development Lead
 Contributors
 ~~~~~~~~~~~~
 
-None yet. Why not be the first?
+* Serkan Hoscai - https://github.com/shosca
+
