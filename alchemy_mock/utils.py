@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from contextlib import contextmanager
 
 import six
+from sqlalchemy import inspect
 
 
 def match_type(s, t):
@@ -116,3 +117,39 @@ def raiser(exp, *args, **kwargs):
         ValueError: error message
     """
     raise exp(*args, **kwargs)
+
+
+def build_identity_map(items):
+    """
+    Utility for building identity map from given sqlalchemy models
+
+    For example::
+
+        >>> from sqlalchemy import Column, Integer, String
+        >>> from sqlalchemy.ext.declarative import declarative_base
+
+        >>> Base = declarative_base()
+
+        >>> class SomeClass(Base):
+        ...     __tablename__ = 'some_table'
+        ...     pk1 = Column(Integer, primary_key=True)
+        ...     pk2 = Column(Integer, primary_key=True)
+        ...     name =  Column(String(50))
+        ...     def __repr__(self):
+        ...         return str(self.pk1)
+
+        >>> build_identity_map([SomeClass(pk1=1, pk2=2)])
+        {(1, 2): 1}
+    """
+    idmap = {}
+
+    for i in items:
+        mapper = inspect(type(i)).mapper
+        pk_keys = tuple(
+            mapper.get_property_by_column(c).key
+            for c in mapper.primary_key
+        )
+        pk = tuple(getattr(i, k) for k in pk_keys)
+        idmap[pk] = i
+
+    return idmap

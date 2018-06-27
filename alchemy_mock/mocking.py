@@ -7,7 +7,13 @@ from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 
 from .comparison import ExpressionMatcher
 from .compat import mock
-from .utils import copy_and_update, indexof, raiser, setattr_tmp
+from .utils import (
+    build_identity_map,
+    copy_and_update,
+    indexof,
+    raiser,
+    setattr_tmp,
+)
 
 
 Call = type(mock.call)
@@ -160,21 +166,34 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
 
     For example::
 
+        >>> from sqlalchemy import Column, Integer, String
+        >>> from sqlalchemy.ext.declarative import declarative_base
+
+        >>> Base = declarative_base()
+
+        >>> class SomeClass(Base):
+        ...     __tablename__ = 'some_table'
+        ...     pk1 = Column(Integer, primary_key=True)
+        ...     pk2 = Column(Integer, primary_key=True)
+        ...     name =  Column(String(50))
+        ...     def __repr__(self):
+        ...         return str(self.pk1)
+
         >>> s = UnifiedAlchemyMagicMock(data=[
         ...     (
         ...         [mock.call.query('foo'),
         ...          mock.call.filter(c == 'one', c == 'two')],
-        ...         [1, 2]
+        ...         [SomeClass(pk1=1, pk2=1), SomeClass(pk1=2, pk2=2)]
         ...     ),
         ...     (
         ...         [mock.call.query('foo'),
         ...          mock.call.filter(c == 'one', c == 'two'),
         ...          mock.call.order_by(c)],
-        ...         [2, 1]
+        ...         [SomeClass(pk1=2, pk2=2), SomeClass(pk1=1, pk2=1)]
         ...     ),
         ...     (
         ...         [mock.call.filter(c == 'three')],
-        ...         [3]
+        ...         [SomeClass(pk1=3, pk2=3)]
         ...     ),
         ... ])
 
@@ -196,6 +215,10 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         >>> list(s.query('foo').filter(c == 'two').filter(c == 'one'))
         [1, 2]
 
+        # .count()
+        >>> s.query('foo').filter(c == 'two').filter(c == 'one').count()
+        2
+
         # .first()
         >>> s.query('foo').filter(c == 'one').filter(c == 'two').first()
         1
@@ -213,18 +236,29 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         ...
         MultipleResultsFound: Multiple rows were found for one()
 
+        # .get()
+        >>> s.query('foo').filter(c == 'two').filter(c == 'one').get((1, 1))
+        1
+        >>> s.query('foo').filter(c == 'three').get((3, 3))
+        3
+        >>> s.query('foo').filter(c == 'three').get((1, 1))
+        >>> s.query('foo').filter(c == 'three').get((4, 4))
+
     Also note that only within same query functions are unified.
     After ``.all()`` is called or query is iterated over, future queries are not unified.
     """
+
     boundary = {
         'all': lambda x: x,
         '__iter__': lambda x: iter(x),
+        'count': lambda x: len(x),
         'first': lambda x: next(iter(x), None),
         'one': lambda x: (
             x[0] if len(x) == 1 else
             raiser(MultipleResultsFound, 'Multiple rows were found for one()') if x else
             raiser(NoResultFound, 'No row was found for one()')
         ),
+        'get': lambda x, idmap: build_identity_map(x).get(idmap),
     }
     unify = {
         'query': None,
@@ -328,6 +362,6 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
                     for i in calls
                 ]
                 if all(c in previous_calls for c in calls):
-                    return self.boundary[_mock_name](result)
+                    return self.boundary[_mock_name](result, *args, **kwargs)
 
-        return self.boundary[_mock_name](_mock_default)
+        return self.boundary[_mock_name](_mock_default, *args, **kwargs)
