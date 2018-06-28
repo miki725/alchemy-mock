@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function, unicode_literals
 from functools import partial
-from itertools import takewhile
+from itertools import chain, takewhile
 
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 
@@ -237,11 +237,13 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         MultipleResultsFound: Multiple rows were found for one()
 
         # .get()
+        >>> s.query('foo').get((1, 1))
+        1
+        >>> s.query('foo').get((4, 4))
         >>> s.query('foo').filter(c == 'two').filter(c == 'one').get((1, 1))
         1
-        >>> s.query('foo').filter(c == 'three').get((3, 3))
-        3
         >>> s.query('foo').filter(c == 'three').get((1, 1))
+        1
         >>> s.query('foo').filter(c == 'three').get((4, 4))
 
     Also note that only within same query functions are unified.
@@ -355,13 +357,20 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
                 sqlalchemy_call(i, with_name=True, base_call=self.unify.get(i[0]) or Call)
                 for i in self._get_previous_calls(self.mock_calls[:-1])
             ]
+            sorted_mock_data = sorted(_mock_data, key=lambda x: len(x[0]), reverse=True)
 
-            for calls, result in sorted(_mock_data, key=lambda x: len(x[0]), reverse=True):
-                calls = [
-                    sqlalchemy_call(i, with_name=True, base_call=self.unify.get(i[0]) or Call)
-                    for i in calls
-                ]
-                if all(c in previous_calls for c in calls):
-                    return self.boundary[_mock_name](result, *args, **kwargs)
+            if _mock_name == 'get':
+                query_call = [c for c in previous_calls if c[0] == 'query'][0]
+                results = list(chain(*[result for calls, result in sorted_mock_data if query_call in calls]))
+                return self.boundary[_mock_name](results, *args, **kwargs)
+
+            else:
+                for calls, result in sorted_mock_data:
+                    calls = [
+                        sqlalchemy_call(i, with_name=True, base_call=self.unify.get(i[0]) or Call)
+                        for i in calls
+                    ]
+                    if all(c in previous_calls for c in calls):
+                        return self.boundary[_mock_name](result, *args, **kwargs)
 
         return self.boundary[_mock_name](_mock_default, *args, **kwargs)
