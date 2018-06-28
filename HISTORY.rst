@@ -3,6 +3,11 @@
 History
 -------
 
+0.3.2 (2018-06-27)
+~~~~~~~~~~~~~~~~~~
+
+* Added support for ``count()`` and ``get()`` between boundaries.
+
 0.3.1 (2018-03-28)
 ~~~~~~~~~~~~~~~~~~
 
