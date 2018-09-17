@@ -266,6 +266,8 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         'query': None,
         'add_columns': None,
         'join': None,
+        'options': None,
+        'group_by': None,
         'filter': UnorderedCall,
         'filter_by': UnorderedCall,
         'order_by': None,
