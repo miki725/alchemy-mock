@@ -2,6 +2,6 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 
-__version__ = '0.3.3'
+__version__ = '0.3.4'
 __description__ = 'SQLAlchemy mock helpers.'
 __author__ = 'Miroslav Shubernetskiy'

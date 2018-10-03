@@ -271,6 +271,7 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         'filter': UnorderedCall,
         'filter_by': UnorderedCall,
         'order_by': None,
+        'limit': None,
     }
 
     def __init__(self, *args, **kwargs):
