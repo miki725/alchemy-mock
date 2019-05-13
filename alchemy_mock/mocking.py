@@ -54,7 +54,7 @@ class UnorderedCall(Call):
     def __eq__(self, other):
         _other = list(other)
         _other[-2] = UnorderedTuple(other[-2])
-        other = Call(tuple(_other), **vars(other))
+        other = Call(tuple(_other), **{k.replace('_mock_', ''): v for k, v in vars(other).items()})
 
         return super(UnorderedCall, self).__eq__(other)
 
