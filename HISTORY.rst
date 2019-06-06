@@ -3,6 +3,11 @@
 History
 -------
 
+0.4.0 (2019-06-06)
+~~~~~~~~~~~~~~~~~~
+
+* Adding basic mutation capability with ``add`` and ``add_all``.
+
 0.3.5 (2019-04-13)
 ~~~~~~~~~~~~~~~~~~
 
