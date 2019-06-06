@@ -246,6 +246,20 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         1
         >>> s.query('foo').filter(c == 'three').get((4, 4))
 
+        # dynamic session
+        >>> s = UnifiedAlchemyMagicMock()
+        >>> s.add(SomeClass(pk1=1, pk2=1))
+        >>> s.add_all([SomeClass(pk1=2, pk2=2)])
+        >>> s.query(SomeClass).all()
+        [1, 2]
+        >>> s.query(SomeClass).get((1, 1))
+        1
+        >>> s.query(SomeClass).get((2, 2))
+        2
+        >>> s.query(SomeClass).get((3, 3))
+        >>> s.query(SomeClass).filter(c == 'one').all()
+        [1, 2]
+
     Also note that only within same query functions are unified.
     After ``.all()`` is called or query is iterated over, future queries are not unified.
     """
@@ -274,6 +288,11 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         'limit': None,
     }
 
+    mutate = {
+        'add',
+        'add_all',
+    }
+
     def __init__(self, *args, **kwargs):
         kwargs['_mock_default'] = kwargs.pop('default', [])
         kwargs['_mock_data'] = kwargs.pop('data', None)
@@ -297,6 +316,17 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
                 ),
             )
             for k in self.unify
+        })
+
+        kwargs.update({
+            k: AlchemyMagicMock(
+                return_value=None,
+                side_effect=partial(
+                    self._mutate_data,
+                    _mock_name=k,
+                ),
+            )
+            for k in self.mutate
         })
 
         super(UnifiedAlchemyMagicMock, self).__init__(*args, **kwargs)
@@ -377,3 +407,25 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
                         return self.boundary[_mock_name](result, *args, **kwargs)
 
         return self.boundary[_mock_name](_mock_default, *args, **kwargs)
+
+    def _mutate_data(self, *args, **kwargs):
+        _mock_name = kwargs.get('_mock_name')
+        _mock_data = self._mock_data = self._mock_data or []
+
+        if _mock_name == 'add':
+            to_add = args[0]
+            query_call = mock.call.query(type(to_add))
+
+            mocked_data = next(iter(filter(lambda i: i[0] == [query_call], _mock_data)), None)
+            if mocked_data:
+                mocked_data[1].append(to_add)
+            else:
+                _mock_data.append(([query_call], [to_add]))
+
+        elif _mock_name == 'add_all':
+            to_add = args[0]
+            _kwargs = kwargs.copy()
+            _kwargs['_mock_name'] = 'add'
+
+            for i in to_add:
+                self._mutate_data(i, *args[1:], **_kwargs)
