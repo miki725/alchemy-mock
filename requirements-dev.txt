@@ -1,10 +1,14 @@
 -r requirements.txt
+black; python_version >= '3.6'
 collective.checkdocs
 coverage
 flake8
+flake8-bugbear; python_version >= '3.5'
 importanize
 mock
 pdbpp
+pre-commit
+pre-commit-hooks
 ptpython
 pytest
 pytest-cov

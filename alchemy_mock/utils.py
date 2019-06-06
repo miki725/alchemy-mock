@@ -20,9 +20,9 @@ def match_type(s, t):
     if isinstance(s, t):
         return s
     if t is six.text_type:
-        return s.decode('utf-8')
+        return s.decode("utf-8")
     else:
-        return s.encode('utf-8')
+        return s.encode("utf-8")
 
 
 def copy_and_update(target, updater):
@@ -63,7 +63,7 @@ def indexof(needle, haystack):
     for i, item in enumerate(haystack):
         if needle is item:
             return i
-    raise ValueError('{!r} is not in {!r}'.format(needle, haystack))
+    raise ValueError("{!r} is not in {!r}".format(needle, haystack))
 
 
 @contextmanager
@@ -146,8 +146,7 @@ def build_identity_map(items):
     for i in items:
         mapper = inspect(type(i)).mapper
         pk_keys = tuple(
-            mapper.get_property_by_column(c).key
-            for c in mapper.primary_key
+            mapper.get_property_by_column(c).key for c in mapper.primary_key
         )
         pk = tuple(getattr(i, k) for k in pk_keys)
         idmap[pk] = i
