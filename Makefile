@@ -1,8 +1,11 @@
 .PHONY: clean-pyc clean-build clean
 
 # automatic help generator
-help:
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
+help:  ## show help
+	@grep -E '^[a-zA-Z_\-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+		cut -d':' -f1- | \
+		sort | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
 install:  ## install all requirements including dev dependencies
 	pip install -U -r requirements-dev.txt
@@ -14,22 +17,25 @@ clean-build:  ## remove build artifacts
 	@rm -rf dist/
 	@rm -rf *.egg-info
 
-clean-pyc:  ## remove Python file artifacts
-	-@find . -name '*.pyc' -follow -print0 | xargs -0 rm -f
-	-@find . -name '*.pyo' -follow -print0 | xargs -0 rm -f
-	-@find . -name '__pycache__' -type d -follow -print0 | xargs -0 rm -rf
+clean-pyc:  ## clean pyc files
+	-@find . -path ./.tox -prune -o -name '*.pyc' -follow -print0 | xargs -0 rm -f
+	-@find . -path ./.tox -prune -o -name '*.pyo' -follow -print0 | xargs -0 rm -f
+	-@find . -path ./.tox -prune -o -name '__pycache__' -type d -follow -print0 | xargs -0 rm -rf
 
 clean-test:  ## remove test and coverage artifacts
 	@rm -rf .coverage coverage*
 	@rm -rf htmlcov/
 	@rm -rf .cache
 
-clean-all:  ## remove tox test artifacts
+clean-all: clean  ## remove tox test artifacts
 	rm -rf .tox
 
-lint:  ## check style with flake8 and importanize
-	flake8 alchemy_mock
-	python -m importanize --ci alchemy_mock/
+lint: clean  ## lint whole library
+	if python -c "import sys; exit(1) if sys.version[:3] < '3.6' else exit(0)"; \
+	then \
+		pre-commit run --all-files ; \
+	fi
+	python setup.py checkdocs
 
 test: clean  ## run all tests
 	pytest --doctest-modules --cov=alchemy_mock/ --cov-report=term-missing alchemy_mock/
@@ -42,12 +48,9 @@ test-all: clean  ## run all tests with tox
 
 check: lint clean test  ## run all necessary steps to check validity of project
 
-release: clean  ## package and upload a release
-	# python setup.py checkdocs
-	python setup.py sdist upload
-	python setup.py bdist_wheel upload
+release: clean  ## push release to pypi
+	python setup.py sdist bdist_wheel upload
 
-dist: clean  ## package
-	python setup.py sdist
-	python setup.py bdist_wheel
+dist: clean  ## create distribution of the library
+	python setup.py sdist bdist_wheel
 	ls -l dist

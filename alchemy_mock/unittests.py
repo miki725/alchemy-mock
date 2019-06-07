@@ -35,7 +35,7 @@ class AlchemyUnittestMixin(object):
         # add sqlalchemy expression type which will allow to
         # use self.assertEqual
         for t in ALCHEMY_TYPES:
-            self.addTypeEqualityFunc(t, 'assertSQLAlchemyExpressionEqual')
+            self.addTypeEqualityFunc(t, "assertSQLAlchemyExpressionEqual")
 
     def assertSQLAlchemyExpressionEqual(self, left, right, msg=None):
         """
@@ -43,7 +43,9 @@ class AlchemyUnittestMixin(object):
         as determined by SQLAlchemyExpressionMatcher
         """
         if ExpressionMatcher(left) != right:
-            raise self.failureException(msg or '{!r} != {!r}'.format(
-                PrettyExpression(left),
-                PrettyExpression(right)
-            ))
+            raise self.failureException(
+                msg
+                or "{!r} != {!r}".format(
+                    PrettyExpression(left), PrettyExpression(right)
+                )
+            )

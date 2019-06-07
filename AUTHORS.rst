@@ -10,4 +10,3 @@ Contributors
 ~~~~~~~~~~~~
 
 * Serkan Hoscai - https://github.com/shosca
-

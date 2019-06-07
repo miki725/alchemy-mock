@@ -1,7 +1,9 @@
 # Config file for automatic testing at travis-ci.org
 
-language: python
 dist: xenial
+sudo: false
+
+language: python
 cache:
   directories:
     - $HOME/.cache/pip
@@ -13,14 +15,12 @@ python:
   - "2.7"
   - "pypy"
 
+# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
-  - pip install -U -r requirements-dev.txt
+  - pip install tox-travis
   - pip install coveralls
 
-script:
-  make check
+# command to run tests, e.g. python setup.py test
+script: tox
 
-after_success:
-  coveralls
-
-sudo: false
+after_success: coveralls

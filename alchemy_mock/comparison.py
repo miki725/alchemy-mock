@@ -10,10 +10,10 @@ from .compat import mock
 from .utils import match_type
 
 
-ALCHEMY_UNARY_EXPRESSION_TYPE = type(column('').asc())
-ALCHEMY_BINARY_EXPRESSION_TYPE = type(column('') == '')
-ALCHEMY_BOOLEAN_CLAUSE_LIST = type(or_(column('') == '', column('').is_(None)))
-ALCHEMY_FUNC_TYPE = type(func.dummy(column('')))
+ALCHEMY_UNARY_EXPRESSION_TYPE = type(column("").asc())
+ALCHEMY_BINARY_EXPRESSION_TYPE = type(column("") == "")
+ALCHEMY_BOOLEAN_CLAUSE_LIST = type(or_(column("") == "", column("").is_(None)))
+ALCHEMY_FUNC_TYPE = type(func.dummy(column("")))
 ALCHEMY_TYPES = (
     ALCHEMY_UNARY_EXPRESSION_TYPE,
     ALCHEMY_BINARY_EXPRESSION_TYPE,
@@ -36,9 +36,8 @@ class PrettyExpression(object):
         >>> PrettyExpression(PrettyExpression(15))
         15
     """
-    __slots__ = [
-        'expr',
-    ]
+
+    __slots__ = ["expr"]
 
     def __init__(self, e):
         if isinstance(e, PrettyExpression):
@@ -51,9 +50,9 @@ class PrettyExpression(object):
 
         compiled = self.expr.compile()
 
-        return '{}(sql={!r}, params={!r})'.format(
+        return "{}(sql={!r}, params={!r})".format(
             self.expr.__class__.__name__,
-            match_type(six.text_type(compiled).replace('\n', ' '), str),
+            match_type(six.text_type(compiled).replace("\n", " "), str),
             {match_type(k, str): v for k, v in compiled.params.items()},
         )
 
@@ -107,11 +106,15 @@ class ExpressionMatcher(PrettyExpression):
         # if the right hand side is mock.ANY,
         # mocks comparison will not be used hence
         # we hard-code comparison here
-        if isinstance(self.expr, type(mock.ANY)) or isinstance(other, type(mock.ANY)):
+        if isinstance(self.expr, type(mock.ANY)) or isinstance(
+            other, type(mock.ANY)
+        ):
             return True
 
         # handle string comparison bytes vs unicode in dict keys
-        if isinstance(self.expr, six.string_types) and isinstance(other, six.string_types):
+        if isinstance(self.expr, six.string_types) and isinstance(
+            other, six.string_types
+        ):
             other = match_type(other, type(self.expr))
 
         # compare sqlalchemy public api attributes
@@ -119,15 +122,21 @@ class ExpressionMatcher(PrettyExpression):
             return False
 
         if not isinstance(self.expr, ALCHEMY_TYPES):
+
             def _(v):
                 return type(self)(v)
 
             if isinstance(self.expr, (list, tuple)):
-                return all(_(i) == j for i, j in six.moves.zip_longest(self.expr, other))
+                return all(
+                    _(i) == j
+                    for i, j in six.moves.zip_longest(self.expr, other)
+                )
 
             elif isinstance(self.expr, collections.Mapping):
                 same_keys = self.expr.keys() == other.keys()
-                return same_keys and all(_(self.expr[k]) == other[k] for k in self.expr.keys())
+                return same_keys and all(
+                    _(self.expr[k]) == other[k] for k in self.expr.keys()
+                )
 
             else:
                 return self.expr is other or self.expr == other

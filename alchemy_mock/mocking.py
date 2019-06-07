@@ -28,6 +28,7 @@ class UnorderedTuple(tuple):
         >>> UnorderedTuple((1, 2, 3)) == (3, 2, 1)
         True
     """
+
     def __eq__(self, other):
         if len(self) != len(other):
             return False
@@ -51,10 +52,14 @@ class UnorderedCall(Call):
         >>> UnorderedCall(((1, 2, 3), {'hello': 'world'})) == Call(((3, 2, 1), {'hello': 'world'}))
         True
     """
+
     def __eq__(self, other):
         _other = list(other)
         _other[-2] = UnorderedTuple(other[-2])
-        other = Call(tuple(_other), **{k.replace('_mock_', ''): v for k, v in vars(other).items()})
+        other = Call(
+            tuple(_other),
+            **{k.replace("_mock_", ""): v for k, v in vars(other).items()}
+        )
 
         return super(UnorderedCall, self).__eq__(other)
 
@@ -76,7 +81,7 @@ def sqlalchemy_call(call, with_name=False, base_call=Call):
     except ValueError:
         name, args, kwargs = call
     else:
-        name = ''
+        name = ""
 
     args = tuple([ExpressionMatcher(i) for i in args])
     kwargs = {k: ExpressionMatcher(v) for k, v in kwargs.items()}
@@ -114,11 +119,11 @@ class AlchemyMagicMock(mock.MagicMock):
     """
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault('__name__', 'Session')
+        kwargs.setdefault("__name__", "Session")
         super(AlchemyMagicMock, self).__init__(*args, **kwargs)
 
     def _format_mock_call_signature(self, args, kwargs):
-        name = self._mock_name or 'mock'
+        name = self._mock_name or "mock"
         args, kwargs = sqlalchemy_call(mock.call(*args, **kwargs))
         return mock._format_call_signature(name, args, kwargs)
 
@@ -128,13 +133,27 @@ class AlchemyMagicMock(mock.MagicMock):
 
     def assert_any_call(self, *args, **kwargs):
         args, kwargs = sqlalchemy_call(mock.call(*args, **kwargs))
-        with setattr_tmp(self, 'call_args_list', [sqlalchemy_call(i) for i in self.call_args_list]):
-            return super(AlchemyMagicMock, self).assert_any_call(*args, **kwargs)
+        with setattr_tmp(
+            self,
+            "call_args_list",
+            [sqlalchemy_call(i) for i in self.call_args_list],
+        ):
+            return super(AlchemyMagicMock, self).assert_any_call(
+                *args, **kwargs
+            )
 
     def assert_has_calls(self, calls, any_order=False):
         calls = [sqlalchemy_call(i) for i in calls]
-        with setattr_tmp(self, 'mock_calls', type(self.mock_calls)([sqlalchemy_call(i) for i in self.mock_calls])):
-            return super(AlchemyMagicMock, self).assert_has_calls(calls, any_order)
+        with setattr_tmp(
+            self,
+            "mock_calls",
+            type(self.mock_calls)(
+                [sqlalchemy_call(i) for i in self.mock_calls]
+            ),
+        ):
+            return super(AlchemyMagicMock, self).assert_has_calls(
+                calls, any_order
+            )
 
 
 class UnifiedAlchemyMagicMock(AlchemyMagicMock):
@@ -265,74 +284,74 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
     """
 
     boundary = {
-        'all': lambda x: x,
-        '__iter__': lambda x: iter(x),
-        'count': lambda x: len(x),
-        'first': lambda x: next(iter(x), None),
-        'one': lambda x: (
-            x[0] if len(x) == 1 else
-            raiser(MultipleResultsFound, 'Multiple rows were found for one()') if x else
-            raiser(NoResultFound, 'No row was found for one()')
+        "all": lambda x: x,
+        "__iter__": lambda x: iter(x),
+        "count": lambda x: len(x),
+        "first": lambda x: next(iter(x), None),
+        "one": lambda x: (
+            x[0]
+            if len(x) == 1
+            else raiser(
+                MultipleResultsFound, "Multiple rows were found for one()"
+            )
+            if x
+            else raiser(NoResultFound, "No row was found for one()")
         ),
-        'get': lambda x, idmap: build_identity_map(x).get(idmap),
+        "get": lambda x, idmap: build_identity_map(x).get(idmap),
     }
     unify = {
-        'query': None,
-        'add_columns': None,
-        'join': None,
-        'options': None,
-        'group_by': None,
-        'filter': UnorderedCall,
-        'filter_by': UnorderedCall,
-        'order_by': None,
-        'limit': None,
+        "query": None,
+        "add_columns": None,
+        "join": None,
+        "options": None,
+        "group_by": None,
+        "filter": UnorderedCall,
+        "filter_by": UnorderedCall,
+        "order_by": None,
+        "limit": None,
     }
 
-    mutate = {
-        'add',
-        'add_all',
-    }
+    mutate = {"add", "add_all"}
 
     def __init__(self, *args, **kwargs):
-        kwargs['_mock_default'] = kwargs.pop('default', [])
-        kwargs['_mock_data'] = kwargs.pop('data', None)
+        kwargs["_mock_default"] = kwargs.pop("default", [])
+        kwargs["_mock_data"] = kwargs.pop("data", None)
 
-        kwargs.update({
-            k: AlchemyMagicMock(
-                side_effect=partial(
-                    self._get_data,
-                    _mock_name=k,
-                ),
-            )
-            for k in self.boundary
-        })
+        kwargs.update(
+            {
+                k: AlchemyMagicMock(
+                    side_effect=partial(self._get_data, _mock_name=k)
+                )
+                for k in self.boundary
+            }
+        )
 
-        kwargs.update({
-            k: AlchemyMagicMock(
-                return_value=self,
-                side_effect=partial(
-                    self._unify,
-                    _mock_name=k,
-                ),
-            )
-            for k in self.unify
-        })
+        kwargs.update(
+            {
+                k: AlchemyMagicMock(
+                    return_value=self,
+                    side_effect=partial(self._unify, _mock_name=k),
+                )
+                for k in self.unify
+            }
+        )
 
-        kwargs.update({
-            k: AlchemyMagicMock(
-                return_value=None,
-                side_effect=partial(
-                    self._mutate_data,
-                    _mock_name=k,
-                ),
-            )
-            for k in self.mutate
-        })
+        kwargs.update(
+            {
+                k: AlchemyMagicMock(
+                    return_value=None,
+                    side_effect=partial(self._mutate_data, _mock_name=k),
+                )
+                for k in self.mutate
+            }
+        )
 
         super(UnifiedAlchemyMagicMock, self).__init__(*args, **kwargs)
 
     def _get_previous_calls(self, calls):
-        return iter(takewhile(lambda i: i[0] not in self.boundary, reversed(calls)))
+        return iter(
+            takewhile(lambda i: i[0] not in self.boundary, reversed(calls))
+        )
 
     def _get_previous_call(self, name, calls):
         # get all previous session calls within same session query
@@ -344,11 +363,15 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         return next(iter(filter(lambda i: i[0] == name, previous_calls)), None)
 
     def _unify(self, *args, **kwargs):
-        _mock_name = kwargs.pop('_mock_name')
+        _mock_name = kwargs.pop("_mock_name")
         submock = getattr(self, _mock_name)
 
-        previous_method_call = self._get_previous_call(_mock_name, self.method_calls)
-        previous_mock_call = self._get_previous_call(_mock_name, self.mock_calls)
+        previous_method_call = self._get_previous_call(
+            _mock_name, self.method_calls
+        )
+        previous_mock_call = self._get_previous_call(
+            _mock_name, self.mock_calls
+        )
 
         if previous_mock_call is None:
             return submock.return_value
@@ -373,7 +396,7 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
 
         submock.call_args = Call((args, kwargs), two=True)
         submock.call_args_list.append(Call((args, kwargs), two=True))
-        submock.mock_calls.append(Call(('', args, kwargs)))
+        submock.mock_calls.append(Call(("", args, kwargs)))
 
         self.method_calls.append(Call((name, args, kwargs)))
         self.mock_calls.append(Call((name, args, kwargs)))
@@ -381,51 +404,71 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         return submock.return_value
 
     def _get_data(self, *args, **kwargs):
-        _mock_name = kwargs.pop('_mock_name')
+        _mock_name = kwargs.pop("_mock_name")
         _mock_default = self._mock_default
         _mock_data = self._mock_data
 
         if _mock_data is not None:
             previous_calls = [
-                sqlalchemy_call(i, with_name=True, base_call=self.unify.get(i[0]) or Call)
+                sqlalchemy_call(
+                    i, with_name=True, base_call=self.unify.get(i[0]) or Call
+                )
                 for i in self._get_previous_calls(self.mock_calls[:-1])
             ]
-            sorted_mock_data = sorted(_mock_data, key=lambda x: len(x[0]), reverse=True)
+            sorted_mock_data = sorted(
+                _mock_data, key=lambda x: len(x[0]), reverse=True
+            )
 
-            if _mock_name == 'get':
-                query_call = [c for c in previous_calls if c[0] == 'query'][0]
-                results = list(chain(*[result for calls, result in sorted_mock_data if query_call in calls]))
+            if _mock_name == "get":
+                query_call = [c for c in previous_calls if c[0] == "query"][0]
+                results = list(
+                    chain(
+                        *[
+                            result
+                            for calls, result in sorted_mock_data
+                            if query_call in calls
+                        ]
+                    )
+                )
                 return self.boundary[_mock_name](results, *args, **kwargs)
 
             else:
                 for calls, result in sorted_mock_data:
                     calls = [
-                        sqlalchemy_call(i, with_name=True, base_call=self.unify.get(i[0]) or Call)
+                        sqlalchemy_call(
+                            i,
+                            with_name=True,
+                            base_call=self.unify.get(i[0]) or Call,
+                        )
                         for i in calls
                     ]
                     if all(c in previous_calls for c in calls):
-                        return self.boundary[_mock_name](result, *args, **kwargs)
+                        return self.boundary[_mock_name](
+                            result, *args, **kwargs
+                        )
 
         return self.boundary[_mock_name](_mock_default, *args, **kwargs)
 
     def _mutate_data(self, *args, **kwargs):
-        _mock_name = kwargs.get('_mock_name')
+        _mock_name = kwargs.get("_mock_name")
         _mock_data = self._mock_data = self._mock_data or []
 
-        if _mock_name == 'add':
+        if _mock_name == "add":
             to_add = args[0]
             query_call = mock.call.query(type(to_add))
 
-            mocked_data = next(iter(filter(lambda i: i[0] == [query_call], _mock_data)), None)
+            mocked_data = next(
+                iter(filter(lambda i: i[0] == [query_call], _mock_data)), None
+            )
             if mocked_data:
                 mocked_data[1].append(to_add)
             else:
                 _mock_data.append(([query_call], [to_add]))
 
-        elif _mock_name == 'add_all':
+        elif _mock_name == "add_all":
             to_add = args[0]
             _kwargs = kwargs.copy()
-            _kwargs['_mock_name'] = 'add'
+            _kwargs["_mock_name"] = "add"
 
             for i in to_add:
                 self._mutate_data(i, *args[1:], **_kwargs)
