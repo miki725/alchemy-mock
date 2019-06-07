@@ -105,8 +105,8 @@ Also real-data can be stubbed by criteria::
     >>> session.query(AnotherModel).filter(Model.note == 'hello world').all()
     []
 
- Finally ``UnifiedAlchemyMagicMock`` can partially fake session mutations
- such as ``session.add(instance)``. For example::
+Finally ``UnifiedAlchemyMagicMock`` can partially fake session mutations
+such as ``session.add(instance)``. For example::
 
     >>> session = UnifiedAlchemyMagicMock()
     >>> session.add(Model(pk=1, foo='bar'))
@@ -118,8 +118,8 @@ Also real-data can be stubbed by criteria::
     >>> session.query(Model).get(2)
     Model(foo='baz')
 
- Note that its partially correct since if added models are filtered on,
- session is unable to actually apply any filters so it returns everything::
+Note that its partially correct since if added models are filtered on,
+session is unable to actually apply any filters so it returns everything::
 
    >>> session.query(Model).filter(Model.foo == 'bar').all()
    [Model(foo='bar'), Model(foo='baz')]
