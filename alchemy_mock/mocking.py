@@ -254,6 +254,7 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         Traceback (most recent call last):
         ...
         MultipleResultsFound: Multiple rows were found for one()
+        >>> s.query('bar').filter(c == 'one').filter(c == 'two').one_or_noneÎÎ()
 
         # .get()
         >>> s.query('foo').get((1, 1))
