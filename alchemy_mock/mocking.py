@@ -297,6 +297,15 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
             if x
             else raiser(NoResultFound, "No row was found for one()")
         ),
+        "one_or_none": lambda x: (
+            x[0]
+            if len(x) == 1
+            else raiser(
+                MultipleResultsFound, "Multiple rows were found for one_or_none()"
+            )
+            if x
+            else None
+        ),
         "get": lambda x, idmap: build_identity_map(x).get(idmap),
     }
     unify = {
