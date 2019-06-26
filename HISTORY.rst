@@ -3,6 +3,11 @@
 History
 -------
 
+0.4.1 (2019-06-26)
+~~~~~~~~~~~~~~~~~~
+
+* Adding support for `one_or_none()`. Thanks @davidroeca
+
 0.4.0 (2019-06-06)
 ~~~~~~~~~~~~~~~~~~
 
