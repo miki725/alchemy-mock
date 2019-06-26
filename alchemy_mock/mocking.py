@@ -302,7 +302,8 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
             x[0]
             if len(x) == 1
             else raiser(
-                MultipleResultsFound, "Multiple rows were found for one_or_none()"
+                MultipleResultsFound,
+                "Multiple rows were found for one_or_none()",
             )
             if x
             else None
