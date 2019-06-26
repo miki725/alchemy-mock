@@ -254,6 +254,7 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         Traceback (most recent call last):
         ...
         MultipleResultsFound: Multiple rows were found for one()
+        >>> s.query('bar').filter(c == 'one').filter(c == 'two').one_or_none()
 
         # .get()
         >>> s.query('foo').get((1, 1))
@@ -296,6 +297,16 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
             )
             if x
             else raiser(NoResultFound, "No row was found for one()")
+        ),
+        "one_or_none": lambda x: (
+            x[0]
+            if len(x) == 1
+            else raiser(
+                MultipleResultsFound,
+                "Multiple rows were found for one_or_none()",
+            )
+            if x
+            else None
         ),
         "get": lambda x, idmap: build_identity_map(x).get(idmap),
     }
