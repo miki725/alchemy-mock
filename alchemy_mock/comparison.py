@@ -14,11 +14,13 @@ ALCHEMY_UNARY_EXPRESSION_TYPE = type(column("").asc())
 ALCHEMY_BINARY_EXPRESSION_TYPE = type(column("") == "")
 ALCHEMY_BOOLEAN_CLAUSE_LIST = type(or_(column("") == "", column("").is_(None)))
 ALCHEMY_FUNC_TYPE = type(func.dummy(column("")))
+ALCHEMY_LABEL_TYPE = type(column("").label(""))
 ALCHEMY_TYPES = (
     ALCHEMY_UNARY_EXPRESSION_TYPE,
     ALCHEMY_BINARY_EXPRESSION_TYPE,
     ALCHEMY_BOOLEAN_CLAUSE_LIST,
     ALCHEMY_FUNC_TYPE,
+    ALCHEMY_LABEL_TYPE,
 )
 
 
@@ -66,6 +68,11 @@ class ExpressionMatcher(PrettyExpression):
     For example::
 
         >>> c = column('column')
+        >>> c2 = column('column2')
+        >>> l1 = c.label('foo')
+        >>> l2 = c.label('foo')
+        >>> l3 = c.label('bar')
+        >>> l4 = c2.label('foo')
         >>> e1 = c.in_(['foo', 'bar'])
         >>> e2 = c.in_(['foo', 'bar'])
         >>> e3 = c.in_(['cat', 'dog'])
@@ -90,6 +97,14 @@ class ExpressionMatcher(PrettyExpression):
         False
         >>> ExpressionMatcher(e1) == ExpressionMatcher(e2)
         True
+        >>> ExpressionMatcher(c) == l1
+        False
+        >>> ExpressionMatcher(l1) == l2
+        True
+        >>> ExpressionMatcher(l1) == l3
+        True
+        >>> ExpressionMatcher(l1) == l4
+        False
 
     It also works with nested structures::
 
