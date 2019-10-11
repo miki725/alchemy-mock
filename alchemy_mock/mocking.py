@@ -320,6 +320,7 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         "filter_by": UnorderedCall,
         "order_by": None,
         "limit": None,
+        "distinct": None,
     }
 
     mutate = {"add", "add_all"}
