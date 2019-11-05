@@ -1,0 +1,21 @@
+---
+kind: pipeline
+name: release
+
+steps:
+- name: release
+  image: python:3.8
+  environment:
+    TWINE_USERNAME:
+      from_secret: pypi_username
+    TWINE_PASSWORD:
+      from_secret: pypi_token
+  commands:
+    - pip install twine
+    - python setup.py sdist bdist_wheel
+    - twine check dist/*
+    - twine upload dist/*
+
+trigger:
+  event:
+    - tag

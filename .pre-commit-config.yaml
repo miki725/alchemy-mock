@@ -1,7 +1,7 @@
 ---
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.2.3
+    rev: 'master'
     hooks:
       - id: check-added-large-files
         args: [--maxkb=1024]
@@ -23,20 +23,20 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
 
-  - repo: local
+  - repo: https://github.com/miki725/importanize
+    rev: 'master'
     hooks:
-    - id: importanize
-      name: importanize
-      entry: python -m importanize
-      language: system
-      language_version: python3
-      types: [python]
-      args: [-v]
+      - id: importanize
+        language_version: python3
 
   - repo: https://github.com/python/black
-    rev: 19.3b0
+    rev: 'master'
     hooks:
       - id: black
         args: [--line-length=80, --safe]
         language_version: python3
-        exclude: test_data/.*\.py$
+
+  - repo: https://github.com/mgedmin/check-manifest
+    rev: 'master'
+    hooks:
+      - id: check-manifest

@@ -1,6 +1,12 @@
 include *.rst *.txt
+exclude .*rc
+exclude .editorconfig
+exclude .pre-commit-config.yaml
+exclude .travis.yml
+exclude .drone.yml
+exclude Makefile
+exclude tox.ini
 recursive-exclude tests *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
-
 recursive-include docs *.rst conf.py Makefile make.bat
