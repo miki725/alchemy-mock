@@ -434,12 +434,10 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
             if _mock_name == "get":
                 query_call = [c for c in previous_calls if c[0] == "query"][0]
                 results = list(
-                    chain(
-                        *[
-                            result
-                            for calls, result in sorted_mock_data
-                            if query_call in calls
-                        ]
+                    chain.from_iterable(
+                        result
+                        for calls, result in sorted_mock_data
+                        if query_call in calls
                     )
                 )
                 return self.boundary[_mock_name](results, *args, **kwargs)
