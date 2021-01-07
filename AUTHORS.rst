@@ -10,3 +10,5 @@ Contributors
 ~~~~~~~~~~~~
 
 * Serkan Hoscai - https://github.com/shosca
+
+* Rajiv Sarvepalli - https://github.com/rajivsarvepalli

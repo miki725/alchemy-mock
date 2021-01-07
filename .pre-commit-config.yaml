@@ -19,7 +19,6 @@ repos:
       - id: end-of-file-fixer
       - id: fix-encoding-pragma
         exclude: test_data/.*\.py$
-      - id: flake8
       - id: mixed-line-ending
       - id: trailing-whitespace
 
@@ -40,3 +39,8 @@ repos:
     rev: 'master'
     hooks:
       - id: check-manifest
+
+  -   repo: https://gitlab.com/pycqa/flake8
+      rev: 3.7.3
+      hooks:
+      -   id: flake8

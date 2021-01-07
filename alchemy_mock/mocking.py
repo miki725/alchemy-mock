@@ -10,6 +10,7 @@ from .compat import mock
 from .utils import (
     build_identity_map,
     copy_and_update,
+    get_item_attr,
     indexof,
     raiser,
     setattr_tmp,
@@ -267,18 +268,84 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         >>> s.query('foo').filter(c == 'three').get((4, 4))
 
         # dynamic session
+        >>> class Model(Base):
+        ...     __tablename__ = 'model_table'
+        ...     pk1 = Column(Integer, primary_key=True)
+        ...     name = Column(String)
+        ...     def __repr__(self):
+        ...         return str(self.pk1)
         >>> s = UnifiedAlchemyMagicMock()
         >>> s.add(SomeClass(pk1=1, pk2=1))
         >>> s.add_all([SomeClass(pk1=2, pk2=2)])
+        >>> s.add_all([SomeClass(pk1=4, pk2=3)])
+        >>> s.add_all([Model(pk1=4, name='some_name')])
         >>> s.query(SomeClass).all()
-        [1, 2]
+        [1, 2, 4]
         >>> s.query(SomeClass).get((1, 1))
         1
         >>> s.query(SomeClass).get((2, 2))
         2
         >>> s.query(SomeClass).get((3, 3))
         >>> s.query(SomeClass).filter(c == 'one').all()
+        [1, 2, 4]
+        >>> s.query(SomeClass).get((4, 3))
+        4
+        >>> s.query(SomeClass).get({"pk2": 3, "pk1": 4})
+        4
+        >>> s.query(Model).get(4)
+        4
+
+        # .delete()
+        >>> s = UnifiedAlchemyMagicMock(data=[
+        ...     (
+        ...         [mock.call.query('foo'),
+        ...          mock.call.filter(c == 'one', c == 'two')],
+        ...         [SomeClass(pk1=1, pk2=1), SomeClass(pk1=2, pk2=2)]
+        ...     ),
+        ...     (
+        ...         [mock.call.query('foo'),
+        ...          mock.call.filter(c == 'one', c == 'two'),
+        ...          mock.call.order_by(c)],
+        ...         [SomeClass(pk1=2, pk2=2), SomeClass(pk1=1, pk2=1)]
+        ...     ),
+        ...     (
+        ...         [mock.call.filter(c == 'three')],
+        ...         [SomeClass(pk1=3, pk2=3)]
+        ...     ),
+        ...     (
+        ...         [mock.call.query('foo'),
+        ...          mock.call.filter(c == 'one', c == 'two', c == 'three')],
+        ...         [SomeClass(pk1=1, pk2=1), SomeClass(pk1=2, pk2=2), SomeClass(pk1=3, pk2=3)]
+        ...     ),
+        ... ])
+
+        >>> s.query('foo').filter(c == 'three').all()
+        [3]
+        >>> s.query('foo').all()
+        []
+        >>> s.query('foo').filter(c == 'three').delete()
+        1
+        >>> s.query('foo').filter(c == 'three').all()
+        []
+        >>> s.query('foo').filter(c == 'one').filter(c == 'two').all()
         [1, 2]
+        >>> s.query('foo').filter(c == 'one').filter(c == 'two').filter(c == 'three').all()
+        [1, 2, 3]
+        >>> s = UnifiedAlchemyMagicMock()
+        >>> s.add(SomeClass(pk1=1, pk2=1))
+        >>> s.add_all([SomeClass(pk1=2, pk2=2)])
+        >>> s.query(SomeClass).all()
+        [1, 2]
+        >>> s.query(SomeClass).delete()
+        2
+        >>> s.query(SomeClass).all()
+        []
+        >>> s = UnifiedAlchemyMagicMock()
+        >>> s.add_all([SomeClass(pk1=2, pk2=2)])
+        >>> s.query(SomeClass).delete()
+        1
+        >>> s.query(SomeClass).delete()
+        0
 
     Also note that only within same query functions are unified.
     After ``.all()`` is called or query is iterated over, future queries are not unified.
@@ -308,7 +375,7 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
             if x
             else None
         ),
-        "get": lambda x, idmap: build_identity_map(x).get(idmap),
+        "get": lambda x, idmap: get_item_attr(build_identity_map(x), idmap),
     }
     unify = {
         "query": None,
@@ -323,7 +390,7 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
         "distinct": None,
     }
 
-    mutate = {"add", "add_all"}
+    mutate = {"add", "add_all", "delete"}
 
     def __init__(self, *args, **kwargs):
         kwargs["_mock_default"] = kwargs.pop("default", [])
@@ -464,7 +531,6 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
     def _mutate_data(self, *args, **kwargs):
         _mock_name = kwargs.get("_mock_name")
         _mock_data = self._mock_data = self._mock_data or []
-
         if _mock_name == "add":
             to_add = args[0]
             query_call = mock.call.query(type(to_add))
@@ -484,3 +550,26 @@ class UnifiedAlchemyMagicMock(AlchemyMagicMock):
 
             for i in to_add:
                 self._mutate_data(i, *args[1:], **_kwargs)
+
+        elif _mock_name == "delete":
+
+            _kwargs = kwargs.copy()
+            # pretend like all is being called to get data
+            _kwargs["_mock_name"] = "all"
+            # a list of deleted items
+            to_delete = list(self._get_data(*args, **_kwargs))
+            num_deleted = len(to_delete)
+            if to_delete:
+                query_call = mock.call.query(type(to_delete[0]))
+                mocked_data = next(
+                    iter(filter(lambda i: i[0] == [query_call], _mock_data)),
+                    None,
+                )
+                if mocked_data:
+                    # remove objects based on the same instances
+                    num_deleted = len(to_delete)
+                    for row in to_delete:
+                        mocked_data[1].remove(row)
+            # we delete the data from the specific query
+            del to_delete
+            return num_deleted

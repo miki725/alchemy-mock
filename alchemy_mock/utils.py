@@ -148,7 +148,32 @@ def build_identity_map(items):
         pk_keys = tuple(
             mapper.get_property_by_column(c).key for c in mapper.primary_key
         )
-        pk = tuple(getattr(i, k) for k in pk_keys)
+        pk = tuple(getattr(i, k) for k in sorted(pk_keys))
         idmap[pk] = i
 
     return idmap
+
+
+def get_item_attr(idmap, access):
+    """
+    Utility for accessing dict by different key types (for get).
+
+    For example::
+        >>> idmap = {(1,): 2}
+        >>> get_item_attr(idmap, 1)
+        2
+        >>> idmap = {(1,): 2}
+        >>> get_item_attr(idmap, {"pk": 1})
+        2
+        >>> get_item_attr(idmap, (1,))
+        2
+    """
+    if isinstance(access, dict):
+        keys = []
+        for names in sorted(access):
+            keys.append(access[names])
+        return idmap.get(tuple(keys))
+    elif isinstance(access, int):
+        return idmap.get((access,))
+    else:
+        return idmap.get(access)
